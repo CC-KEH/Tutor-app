@@ -1,0 +1,11 @@
+langchain
+flask
+fastapi
+uvicorn
+streamlit 
+chromadb
+langchain_google_genai
+faiss-cpu
+PyPDF2
+langchain-community
+-e .
