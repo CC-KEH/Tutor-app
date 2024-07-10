@@ -2,3 +2,4 @@ artifacts/csvs/sample_text.csv
 artifacts/pdfs/ssrn-4878177.pdf
 artifacts/txts/nvda_news_1.txt
 artifacts/csvs/movies.csv
+.env
