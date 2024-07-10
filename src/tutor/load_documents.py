@@ -2,7 +2,7 @@ import os
 import nest_asyncio
 import dotenv
 import pandas as pd
-from utils.parsers import Parser
+from tutor.utils.parsers import Parser
 from pinecone import Pinecone, ServerlessSpec
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.vector_stores.pinecone import PineconeVectorStore
