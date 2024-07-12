@@ -23,23 +23,19 @@ class DocumentLoader:
             ".csv": self.parser.csv_parser,
             ".txt": self.parser.txt_parser
         }
-        self.embed_model_name = "sentence-transformers/paraphrase-MiniLM-L6-v2"
 
     def parse_data(self):
         try:
-            pdf_documents = SimpleDirectoryReader(os.path.join(self.folder_path,"pdf"),file_extractor=self.file_extractor).load_data()  
-            csv_documents = SimpleDirectoryReader(os.path.join(self.folder_path,"csv"),file_extractor=self.file_extractor).load_data()  
-            txt_documents = SimpleDirectoryReader(os.path.join(self.folder_path,"txt"),file_extractor=self.file_extractor).load_data()  
+            documents = SimpleDirectoryReader(os.path.join(self.folder_path),file_extractor=self.file_extractors).load_data()  
             
-            return {
-                "parsed_pdf" : pdf_documents,
-                "parser_cvs" : csv_documents,
-                "parsed_txt" : txt_documents
-            }
+            print("Successfully parsed the documents.")
+            return True,"Parsed data",documents
+
         except Exception as e:
-            return f"Error: {e}"
+            print(e)
+            return False,f"Error: {e}",None
     
-    def store_to_pinecone(
+    def store_to_index(
             self,
             data,
             index_name,
@@ -55,15 +51,19 @@ class DocumentLoader:
             if storage_type == "default":
                 vector_store = PineconeVectorStore(pinecone_index=pc_index_instance,namespace=namespace)
                 storage_context = StorageContext.from_defaults(vector_store=vector_store)
+                print("upserting data to pinecone")
                 retrieval_index = VectorStoreIndex.from_documents(
                     data, 
                     storage_context=storage_context,
                     embed_model=embedding_model
                 )
+                print("upserted data to pinecone")
             
+            print("Successfully stored to database")
             return True,"Stored to database", retrieval_index
         
         except Exception as e:
+            print(e)
             return False, f"Error: {e}", None
 
 
