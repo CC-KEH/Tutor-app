@@ -14,12 +14,12 @@ response_template = json.dumps(json_data, indent=4)
     
 print(response_template)
 
-json_string = {
+json_file = {
             "number": 10,
             "subject": "Maths",
-            "tone": "easy",
+            "difficulty": "easy",
             "response_template": response_template
         }
-json_str = json.dumps(json_string)
+json_str = json.dumps(json_file)
 
 master.generate_mcq(json_str)

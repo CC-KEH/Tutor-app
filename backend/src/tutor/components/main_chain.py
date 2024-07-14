@@ -9,13 +9,16 @@ from langchain.chains import LLMChain
 from langchain.chains import SequentialChain
 from llama_index.core.agent import ReActAgent
 from pydantic import BaseModel
-from tutor.templates.templates import mcq_template , QnA_agent_context
-from llama_index.core.output_parsers import PydanticOutputParser
-from llama_index.core.tools import QueryEngineTool, ToolMetadata
-from llama_index.core.query_pipeline import QueryPipeline
+from tutor.templates.templates import mcq_template , science_agent_context
 from llama_index.embeddings.google import GooglePaLMEmbedding
 import google.generativeai as genai
 from llama_index.llms.gemini import Gemini
+from langchain.tools import BaseTool
+from langchain.agents import Tool
+from tutor.tools.retrieval_tool import retrieve_data    
+from langchain.output_parsers import PydanticOutputParser
+from llama_index.core.tools import FunctionTool
+from functools import partial
 import json
 from dotenv import load_dotenv
 import genai
@@ -24,8 +27,8 @@ load_dotenv()
 
 class parseFormat(BaseModel):
     number: int
-    subject: str
-    tone: str
+    topics: str
+    difficulty: str
     response_template: str
 
 class Master:
@@ -35,55 +38,109 @@ class Master:
         self.GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
         self.default_embedding_model = GooglePaLMEmbedding(model_name="models/embedding-gecko-001", api_key=self.GOOGLE_API_KEY)
         self.tools = []
-        self.study_agent_llm = Gemini(model="models/gemini-pro")
+        self.gemini_llm = Gemini(model="models/gemini-pro")
         self.coding_agent_llm = None
         self.numerical_agent_llm = None
     
     
-    def learn(self,index_name,embedding_model=None,namespace="common"):
+    def learn(self,index_name,embedding_model=None,namespace=""):
         if embedding_model is None:
             embedding_model = self.default_embedding_model
         
-        try:
-            _,_,data = self.ducument_loader.parse_data()
-            
-            _,_,retrieval_index = self.ducument_loader.store_to_index(
+        
+        _,_,data = self.ducument_loader.parse_data()
+        
+        _,_,retrieval_index = self.ducument_loader.store_to_index(
                 data=data,
                 index_name= index_name,
                 namespace=namespace,
                 embedding_model=embedding_model
             )
+        
+        retrieve_data_with_index = partial(retrieve_data, retrieval_index)
+
+        # Then, create the FunctionTool
+        retrieve_data_tool = FunctionTool.from_defaults(
+            fn=retrieve_data_with_index,
+            name="RetrieveDataTool",
+            description="Tool for retrieving data based on the provided topics. This will give out the study materials. Input should be the topics separated by comma."
+        )
+        print("Tool made")
+        
+        self.tools.append(retrieve_data_tool)
+        print("Master has learnt the study materials.")
+        
+        return True
+        
+        
+        # try:
+        #     _,_,data = self.ducument_loader.parse_data()
             
-            query_engine = retrieval_index.as_query_engine(llm=self.study_agent_llm, verbose=True)
-            query_engine_tool = QueryEngineTool(
-                                    query_engine=query_engine,
-                                    metadata=ToolMetadata(
-                                        name = "Transformers",
-                                        description="this gives the study materials for transformers provided by user. Use this for fetching and reading study materials for transformers.",
-                                    ),
-                                )
-            self.tools.append(query_engine_tool)
-            print("Master has learnt the study materials.")
+        #     _,_,retrieval_index = self.ducument_loader.store_to_index(
+        #         data=data,
+        #         index_name= index_name,
+        #         namespace=namespace,
+        #         embedding_model=embedding_model
+        #     )
             
-        except Exception as e:
-            print(e)
-            return f"Error: {e}"
+        #     query_engine = retrieval_index.as_query_engine(llm=self.study_agent_llm, verbose=True, similarity_top_k=20)
+        #     query_engine_tool = QueryEngineTool(
+        #                             query_engine=query_engine,
+        #                             metadata=ToolMetadata(
+        #                                 name = "study_materials",
+        #                                 description="""this gives the context based on the study materials provided by user. Use this to ask the study materials based on just the topics provided.
+        #                                             Example input: "transformers and vision transformers.""",
+        #                             ),
+        #                         )
+        #     self.tools.append(query_engine_tool)
+        #     print("Master has learnt the study materials.")
+            
+        # except Exception as e:
+        #     print(e)
+        #     return f"Error: {e}"
         
         
     
-    def generate_mcq(self, prompt):
+    def generate_mcq(self, json_str):
         
         print("Tools : ", self.tools)
         
-        # parser = PydanticOutputParser(parseFormat)
-        # json_parsed_data = parser.parse(json_str)
-        # formatted_prompt = mcq_template.format(**json_parsed_data.dict())
+        parser = PydanticOutputParser(pydantic_object=parseFormat)
+        json_parsed_data = parser.parse(json_str)
+        formatted_prompt = mcq_template.format(**json_parsed_data.dict())
         
         # print("Formatted prompt :",formatted_prompt)
         
-        agent = ReActAgent.from_tools(self.tools, llm=self.study_agent_llm, verbose=True, context=QnA_agent_context)
+        science_agent = ReActAgent.from_tools(self.tools, llm=self.gemini_llm, verbose=True, context=science_agent_context)
         
-        agent.query(prompt)
+        science_agent.query(formatted_prompt)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
