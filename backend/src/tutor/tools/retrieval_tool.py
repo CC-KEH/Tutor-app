@@ -1,6 +1,7 @@
 # from langchain.tools import BaseTool
 from pinecone import Pinecone
 from llama_index.embeddings.google import GooglePaLMEmbedding
+from langchain.tools import tool
 import os
 from pydantic import Field
 
@@ -31,7 +32,8 @@ from pydantic import Field
     
 #     return '\n\n'.join(data)
 
-def retrieve_data(retrieval_index, topics: str) -> str:
+# @tool("RetrieveDataTool",return_direct=True)
+def retrieve_data(retrieval_index, prompt: str) -> str:
     """
     Tool for retrieving data based on topics from a provided retrieval index.
     Input should be the topics separated by comma.
@@ -44,17 +46,17 @@ def retrieve_data(retrieval_index, topics: str) -> str:
     Returns:
         str: Retrieved data joined by newlines.
     """
-    # Create a retriever from the index
-    retriever = retrieval_index.as_retriever(similarity_top_k=20)
+
+    retriever = retrieval_index.as_retriever(similarity_top_k=40)
     
-    # Query the retriever
-    retrieved_nodes = retriever.retrieve(topics)
-    
-    # Extract the content from retrieved nodes
+    retrieved_nodes = retriever.retrieve(prompt)
+
     data = [node.node.get_content() for node in retrieved_nodes]
     
     print("number_of_chunks: ",len(data))
     for idx, chunk in enumerate(data):
-        print(len(chunk))
+        print("chunk: ",idx)
+        print("Chunk Length: ",len(chunk))
+        print(chunk)
     
     return '\n\n'.join(data)

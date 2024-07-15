@@ -9,7 +9,13 @@ from langchain.chains import LLMChain
 from langchain.chains import SequentialChain
 from llama_index.core.agent import ReActAgent
 from pydantic import BaseModel
-from tutor.templates.templates import mcq_template , science_agent_context
+from tutor.templates.templates import (
+    mcq_template,
+    mcq_agent_context,
+    qna_agent_context,
+    numerical_qna_agent_context,
+    numerical_mcq_agent_context
+)
 from llama_index.embeddings.google import GooglePaLMEmbedding
 import google.generativeai as genai
 from llama_index.llms.gemini import Gemini
@@ -30,6 +36,7 @@ class parseFormat(BaseModel):
     topics: str
     difficulty: str
     response_template: str
+    question_type: str 
 
 class Master:
     def __init__(self,knowledge_base_path):
@@ -47,73 +54,68 @@ class Master:
         if embedding_model is None:
             embedding_model = self.default_embedding_model
         
-        
-        _,_,data = self.ducument_loader.parse_data()
-        
-        _,_,retrieval_index = self.ducument_loader.store_to_index(
-                data=data,
-                index_name= index_name,
-                namespace=namespace,
-                embedding_model=embedding_model
-            )
-        
-        retrieve_data_with_index = partial(retrieve_data, retrieval_index)
+        try:
+            print("Parsing the data")
+            _,_,data = self.ducument_loader.parse_data()
+            print("Data parsed")
+            
+            print("Storing the data")
+            _,_,retrieval_index = self.ducument_loader.store_to_index(
+                    data=data,
+                    index_name= index_name,
+                    namespace=namespace,
+                    embedding_model=embedding_model
+                )
+            print("Data stored")
+            
+            retrieve_data_with_index = partial(retrieve_data, retrieval_index)
 
-        # Then, create the FunctionTool
-        retrieve_data_tool = FunctionTool.from_defaults(
-            fn=retrieve_data_with_index,
-            name="RetrieveDataTool",
-            description="Tool for retrieving data based on the provided topics. This will give out the study materials. Input should be the topics separated by comma."
-        )
-        print("Tool made")
-        
-        self.tools.append(retrieve_data_tool)
-        print("Master has learnt the study materials.")
-        
-        return True
-        
-        
-        # try:
-        #     _,_,data = self.ducument_loader.parse_data()
+            # Then, create the FunctionTool
+            retrieve_data_tool = FunctionTool.from_defaults(
+                fn=retrieve_data_with_index,
+                name="RetrieveDataTool",
+                description="Tool for retrieving data based on the provided topics. This will give out the study materials. Input should be the topics separated by comma."
+            )
+            print("Tool made")
             
-        #     _,_,retrieval_index = self.ducument_loader.store_to_index(
-        #         data=data,
-        #         index_name= index_name,
-        #         namespace=namespace,
-        #         embedding_model=embedding_model
-        #     )
+            self.tools.append(retrieve_data_tool)
+            print("Master has learnt the study materials.")   
             
-        #     query_engine = retrieval_index.as_query_engine(llm=self.study_agent_llm, verbose=True, similarity_top_k=20)
-        #     query_engine_tool = QueryEngineTool(
-        #                             query_engine=query_engine,
-        #                             metadata=ToolMetadata(
-        #                                 name = "study_materials",
-        #                                 description="""this gives the context based on the study materials provided by user. Use this to ask the study materials based on just the topics provided.
-        #                                             Example input: "transformers and vision transformers.""",
-        #                             ),
-        #                         )
-        #     self.tools.append(query_engine_tool)
-        #     print("Master has learnt the study materials.")
-            
-        # except Exception as e:
-        #     print(e)
-        #     return f"Error: {e}"
+            return "Learning Successful", True
+        
+        except Exception as e:
+            print(e)
+            return f"Error: {e}", False
         
         
     
-    def generate_mcq(self, json_str):
+    def generate_mcq(self, task):
         
         print("Tools : ", self.tools)
         
-        parser = PydanticOutputParser(pydantic_object=parseFormat)
-        json_parsed_data = parser.parse(json_str)
-        formatted_prompt = mcq_template.format(**json_parsed_data.dict())
+        # parser = PydanticOutputParser(pydantic_object=parseFormat)
+        # json_parsed_data = parser.parse(json_str)
         
-        # print("Formatted prompt :",formatted_prompt)
+        formatted_prompt = mcq_template.format(**task.dict())
         
-        science_agent = ReActAgent.from_tools(self.tools, llm=self.gemini_llm, verbose=True, context=science_agent_context)
+        print("Formatted prompt :",formatted_prompt)
         
-        science_agent.query(formatted_prompt)
+        mcq_agent = ReActAgent.from_tools(self.tools, llm=self.gemini_llm, verbose=True, context=mcq_agent_context)
+        
+        result = mcq_agent.query(formatted_prompt)
+        
+        # Send result
+        return result
+    
+    def generate_qna(self, task):
+        
+        formatted_prompt = mcq_template.format(**task.dict())
+    
+    def generate_numerical_qna(self, json_str):
+        pass
+    
+    def generate_numerical_mcq(self, json_str):
+        pass
 
 
 
