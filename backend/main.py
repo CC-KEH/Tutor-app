@@ -25,9 +25,9 @@ def store(FOLDER_PATH):
         master = Master(knowledge_base_path=FOLDER_PATH)
         master.learn(index_name='tutor')
         
-        return {True,"Stored the file",master}
+        return True,"Stored the file",master
     except:
-        return {False,"Error in storing the file",None}
+        return False,"Error in storing the file", None
 
 def run(master,task):
 

@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from uuid import UUID, uuid4
+import uuid
 from main import store, run
 import pickle
 import shutil
@@ -13,10 +14,11 @@ import os
 app = FastAPI()
 
 tasks = []
+master_objects = []
 
 class format(BaseModel):
     id : Optional[UUID] = None
-    number: Optional[UUID] = 10
+    number: Optional[int] = 10
     topics: str
     difficulty: Optional[str] = "easy"
     response_template: Optional[str] = ""
@@ -58,11 +60,10 @@ async def upload_multiple_files(files: List[UploadFile] = File(...), memory: boo
 def store_in_background():
     try:
         flag, message, master = store(FOLDER_PATH=UPLOAD_DIR)
+        master_objects.append(master)
         # Save master object to db
-        with open('backend/artifacts/master_objects/master_object.pkl', 'wb') as f:
-            pickle.dump(master, f)
     except Exception as e:
-        pass
+        print("error while making master object", e)
     
 @app.post("/store_in_vector_db/")
 async def store_to_db(background_tasks: BackgroundTasks):
@@ -70,6 +71,7 @@ async def store_to_db(background_tasks: BackgroundTasks):
     
     try:
         background_tasks.add_task(store_in_background)
+        return JSONResponse(content={"status": "Started storage"}, status_code=200)
     
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
@@ -77,7 +79,7 @@ async def store_to_db(background_tasks: BackgroundTasks):
 
 @app.post("/make_mcq/", response_model=format)
 def make_mcq(task: format):
-    task.id = uuid4()
+    task.id = str(uuid.uuid4())
     with open("backend/src/tutor/templates/quiz_template.json", 'r') as file:
         json_data = json.load(file)
         response_template = json.dumps(json_data, indent=4) 
@@ -85,44 +87,17 @@ def make_mcq(task: format):
     
     tasks.append(task)
     
-    with open("backend/artifacts/master_objects/master_object.pkl", 'rb') as f:
-            # Deserialize the object from the file
-            master = pickle.load(f)
-    
-    result = run(master=master,task=task)
-    
-    return {"result": result}   
+    master = master_objects[-1]
+
+    result = run(master=master, task=task)
+
+    return JSONResponse(content={"result": result}, status_code=200) 
 
 
 @app.get("/history/", response_model=List[format])
 def show_history():
     return tasks
 
-# @app.get("/tasks/{task_id}", response_model=format)
-# def read_task(task_id: UUID):
-#     for task in tasks:
-#         if task.id == task_id:
-#             return task
-        
-#     raise HTTPException(status_code=404, detail="Task not found")
-
-# @app.put("/tasks/{task_id}", response_model=Task)
-# def update_task(task_id: UUID, task_update: Task):
-#     for idx, task in enumerate(tasks):
-#         if task.id == task_id:
-#             updated_task = task.copy(update=task_update.dict(exclude_unset=True))
-#             tasks[idx] = updated_task
-#             return updated_task
-        
-#     raise HTTPException(status_code=404, detail="Task not found")
-
-# @app.delete("/tasks/{task_id}", response_model=Task)
-# def delete_task(task_id: UUID):
-#     for idx, task in enumerate(tasks):
-#         if task.id == task_id:
-#             return tasks.pop(idx)
-    
-#     raise HTTPException(status_code=404, detail="Task not found")
 
 
 if __name__ == "__main__":

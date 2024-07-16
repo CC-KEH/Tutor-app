@@ -105,7 +105,7 @@ class Master:
         result = mcq_agent.query(formatted_prompt)
         
         # Send result
-        return result
+        return str(result)
     
     def generate_qna(self, task):
         
