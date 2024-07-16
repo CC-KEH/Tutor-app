@@ -4,7 +4,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quiz/constants.dart';
+import 'package:quiz/utils.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -28,36 +31,54 @@ class ProfileScreen extends StatelessWidget {
                   decoration: const BoxDecoration(
                     color: white_color,
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      SizedBox(height: 40),
+                      const SizedBox(height: 40),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 15),
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(Icons.arrow_back_rounded,size: 35,),
-                            Text(
-                              'Settings',
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: GoRouter.of(context).pop,
+                                child: const Icon(
+                                  Icons.arrow_back_rounded,
+                                  size: 35,
+                                ),
+                              ),
+                            ),
+                            const Text(
+                              'Profile',
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 35,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Icon(Icons.save,size: 35,),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: save_settings,
+                                child: const Icon(
+                                  Icons.save,
+                                  size: 35,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      Column(
+                      const Column(
                         children: [
                           SizedBox(
                             height: 50,
                           ),
                           Text(
                             'You have not added any Subjects yet.',
-                            style: TextStyle(
-                                fontSize: 20, color: Colors.black54),
+                            style:
+                                TextStyle(fontSize: 20, color: Colors.black54),
                           )
                         ],
                       ),

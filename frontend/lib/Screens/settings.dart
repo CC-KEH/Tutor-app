@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quiz/constants.dart';
+import 'package:quiz/utils.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -38,12 +39,17 @@ class SettingsScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            GestureDetector(
-                                onTap: () => context.go("/subjects"),
-                                child: const Icon(
-                                  Icons.arrow_back_rounded,
-                                  size: 35,
-                                )),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                  onTap: () {
+                                    GoRouter.of(context).pop();
+                                  },
+                                  child: const Icon(
+                                    Icons.arrow_back_rounded,
+                                    size: 35,
+                                  )),
+                            ),
                             const Text(
                               'Settings',
                               style: TextStyle(
@@ -52,12 +58,17 @@ class SettingsScreen extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            GestureDetector(
-                                onTap: () {},
-                                child: const Icon(
-                                  Icons.save,
-                                  size: 35,
-                                )),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                  onTap: () {
+                                    save_settings();
+                                  },
+                                  child: const Icon(
+                                    Icons.save,
+                                    size: 35,
+                                  )),
+                            ),
                           ],
                         ),
                       ),

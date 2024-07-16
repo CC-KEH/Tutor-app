@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quiz/Router/constants.dart';
 import 'package:quiz/constants.dart';
 
 
@@ -55,7 +56,9 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 35,),
                   TextButton(
-                    onPressed: ()=>context.go('/authentication'),
+                    onPressed: (){
+                      GoRouter.of(context).pushNamed(MyAppRouteConstants.register);
+                    },
                     style: TextButton.styleFrom(backgroundColor: lemon_green),
                     child: const Text(
                       'Get Started',

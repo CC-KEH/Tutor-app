@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quiz/Router/configuration.dart';
 
 // Screens
 import 'package:quiz/screens/register.dart';
@@ -20,10 +21,8 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: "Quiz App",
-      home: LoginScreen(),
+    return MaterialApp.router(
+      routerConfig: custom_router,
     );
   }
 }
